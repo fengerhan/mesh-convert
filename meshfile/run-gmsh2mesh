@@ -1,0 +1,34 @@
+#! /bin/bash
+
+if test "$1" = ""
+then
+	echo " error: there is no input file of *.geo !"
+elif [ ! -e "./$1.geo" ]
+then
+	echo "error: there is no $1.geo !"
+else
+gmsh "$1.geo" -3 -format vtk
+gmsh "$1.geo" -3
+echo " 开始修改　msh 文件"
+echo "" > meshfile
+cat "$1.msh" | \
+while read line
+do
+	echo $line >> meshfile
+	if test "$line" = "\$EndMeshFormat"
+	then
+		while read line
+		do
+			if test "$line" = "\$EndPhysicalNames"
+			then
+				break
+			fi
+		done
+	fi
+done
+echo " 完成修改　msh 文件"
+
+make
+mv ./main gmsh2mesh
+./gmsh2mesh meshfile "$1.mesh"
+fi
